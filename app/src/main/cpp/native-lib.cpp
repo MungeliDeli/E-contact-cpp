@@ -276,7 +276,7 @@ Java_com_example_e_1contact_DbHelper_deleteContact(JNIEnv *env, jobject, jint co
     sqlite3_finalize(stmt);
     return rc == SQLITE_DONE ? SQLITE_OK : rc;
 }
-// Function to insert data into USERDATA table
+// Function to insert data into USERDATA table (Chibotu)
 extern "C" JNIEXPORT jint JNICALL
 Java_com_example_e_1contact_DbHelper_insertData(JNIEnv *env, jobject, jstring firstName, jstring lastName, jstring homeAddress, jstring homePhone, jstring emergencyContact, jstring emergencyContactNumber) {
     const char *sqlInsert = "INSERT INTO USERDATA (FIRST_NAME, LAST_NAME, HOME_ADDRESS, HOME_PHONE, EMERGENCY_CONTACT_NAME, EMERGENCY_CONTACT_NUMBER) VALUES (?, ?, ?, ?, ?, ?);";
@@ -368,6 +368,70 @@ Java_com_example_e_1contact_DbHelper_insertData(JNIEnv *env, jobject, jstring fi
     env->ReleaseStringUTFChars(emergencyContactNumber, emergencyContactNumberCStr);
 
     return rc == SQLITE_DONE ? SQLITE_OK : rc;
+}
+
+//Funvtion to get userData (Chibotu)
+extern "C" JNIEXPORT jobject JNICALL
+Java_com_example_e_1contact_DbHelper_getUserData(JNIEnv *env, jobject /* this */) {
+
+    const char *sqlQuery = "SELECT ID , FIRST_NAME,LAST_NAME,HOME_ADDRESS , HOME_PHONE, EMERGENCY_CONTACT_NAME, EMERGENCY_CONTACT_NUMBER FROM USERDATA;";
+    sqlite3_stmt *stmt;
+
+
+
+    LOGI("Preparing SQL statement");
+    int rc = sqlite3_prepare_v2(db, sqlQuery, -1, &stmt, 0);
+    if (rc != SQLITE_OK) {
+        LOGE("Failed to prepare statement: %s", sqlite3_errmsg(db));
+        return nullptr;
+    } else {
+        LOGI("Statement prepared successfully");
+    }
+
+    jclass userDataClass = env->FindClass("com/example/e_contact/UserData");
+    if (userDataClass == nullptr) {
+        LOGE("Failed to find UserData class");
+        return nullptr;
+    }
+
+    jmethodID userDataConstructor = env->GetMethodID(userDataClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+    if (userDataConstructor == nullptr) {
+        LOGE("Failed to find UserData constructor");
+        return nullptr;
+    }
+
+    jobject userDataObj = nullptr;
+
+    LOGI("Stepping through the result set");
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        jstring firstName = env->NewStringUTF((const char *) sqlite3_column_text(stmt, 1));
+        jstring lastName = env->NewStringUTF((const char *) sqlite3_column_text(stmt, 2));
+        jstring homeAddress = env->NewStringUTF((const char *) sqlite3_column_text(stmt, 3));
+        jstring homePhone = env->NewStringUTF((const char *) sqlite3_column_text(stmt, 4));
+        jstring emergencyContactName = env->NewStringUTF((const char *) sqlite3_column_text(stmt, 5));
+        jstring emergencyContactNumber = env->NewStringUTF((const char *) sqlite3_column_text(stmt, 6));
+
+        userDataObj = env->NewObject(userDataClass, userDataConstructor, firstName, lastName, homeAddress, homePhone, emergencyContactName, emergencyContactNumber);
+
+        env->DeleteLocalRef(firstName);
+        env->DeleteLocalRef(lastName);
+        env->DeleteLocalRef(homeAddress);
+        env->DeleteLocalRef(homePhone);
+        env->DeleteLocalRef(emergencyContactName);
+        env->DeleteLocalRef(emergencyContactNumber);
+
+        if (userDataObj != nullptr) {
+            LOGI("UserData object created successfully");
+        } else {
+            LOGE("Failed to create UserData object");
+        }
+    } else {
+        LOGI("No data found in USERDATA table");
+    }
+
+    sqlite3_finalize(stmt);
+
+    return userDataObj;
 }
 
 
