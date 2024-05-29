@@ -253,6 +253,33 @@ Java_com_example_e_1contact_DbHelper_updateContact(JNIEnv *env, jobject, jint co
 }
 
 
+// Function to delete a contact from the CONTACT table
+extern "C" JNIEXPORT jint JNICALL
+Java_com_example_e_1contact_DbHelper_deleteContact(JNIEnv *env, jobject, jint contactId) {
+    const char *sqlDelete = "DELETE FROM CONTACT WHERE ID = ?;";
+    sqlite3_stmt *stmt;
+    int rc = sqlite3_prepare_v2(db, sqlDelete, -1, &stmt, 0);
+    if (rc != SQLITE_OK) {
+        LOGE("Failed to prepare statement: %s", sqlite3_errmsg(db));
+        return rc;
+    }
+
+    sqlite3_bind_int(stmt, 1, contactId);
+
+    rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE) {
+        LOGE("Execution failed: %s", sqlite3_errmsg(db));
+    } else {
+        LOGI("Record deleted successfully");
+    }
+
+    sqlite3_finalize(stmt);
+    return rc == SQLITE_DONE ? SQLITE_OK : rc;
+}
+
+
+
+
 
 
 
