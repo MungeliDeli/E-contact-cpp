@@ -276,6 +276,99 @@ Java_com_example_e_1contact_DbHelper_deleteContact(JNIEnv *env, jobject, jint co
     sqlite3_finalize(stmt);
     return rc == SQLITE_DONE ? SQLITE_OK : rc;
 }
+// Function to insert data into USERDATA table
+extern "C" JNIEXPORT jint JNICALL
+Java_com_example_e_1contact_DbHelper_insertData(JNIEnv *env, jobject, jstring firstName, jstring lastName, jstring homeAddress, jstring homePhone, jstring emergencyContact, jstring emergencyContactNumber) {
+    const char *sqlInsert = "INSERT INTO USERDATA (FIRST_NAME, LAST_NAME, HOME_ADDRESS, HOME_PHONE, EMERGENCY_CONTACT_NAME, EMERGENCY_CONTACT_NUMBER) VALUES (?, ?, ?, ?, ?, ?);";
+    sqlite3_stmt *stmt;
+    int rc = sqlite3_prepare_v2(db, sqlInsert, -1, &stmt, 0);
+    if (rc != SQLITE_OK) {
+        LOGE("Failed to prepare statement: %s", sqlite3_errmsg(db));
+        return rc;
+    }
+
+//    inserting Home phone into the contact table
+    const char *sqlInsert1 = "INSERT INTO CONTACT (CONTACT_NAME, CONTACT_NUMBER) VALUES ('Home Phone', ?);";
+    sqlite3_stmt *stmt1;
+    int rc1 = sqlite3_prepare_v2(db, sqlInsert1, -1, &stmt1, 0);
+    if (rc1 != SQLITE_OK) {
+        LOGE("Failed to prepare statement: %s", sqlite3_errmsg(db));
+        return rc1;
+    }
+
+//    inserting Emergency contact details  into the contact table
+
+    const char *sqlInsert2 = "INSERT INTO CONTACT (CONTACT_NAME, CONTACT_NUMBER) VALUES (?, ?);";
+    sqlite3_stmt *stmt2;
+    int rc2 = sqlite3_prepare_v2(db, sqlInsert2, -1, &stmt2, 0);
+    if (rc2 != SQLITE_OK) {
+        LOGE("Failed to prepare statement: %s", sqlite3_errmsg(db));
+        return rc2;
+    }
+
+
+    const char *firstNameCStr = env->GetStringUTFChars(firstName, nullptr);
+    const char *lastNameCStr = env->GetStringUTFChars(lastName, nullptr);
+    const char *homeAddressCStr = env->GetStringUTFChars(homeAddress, nullptr);
+    const char *homePhoneCStr = env->GetStringUTFChars(homePhone, nullptr);
+    const char *emergencyContactCStr = env->GetStringUTFChars(emergencyContact, nullptr);
+    const char *emergencyContactNumberCStr = env->GetStringUTFChars(emergencyContactNumber, nullptr);
+
+
+//    binding data to go into the contact details
+    sqlite3_bind_text(stmt1, 1, homePhoneCStr, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt2, 1, emergencyContactCStr, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt2, 2, emergencyContactNumberCStr, -1, SQLITE_TRANSIENT);
+
+//    binding the data to go into the userdata detials
+    sqlite3_bind_text(stmt, 1, firstNameCStr, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, lastNameCStr, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 3, homeAddressCStr, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 4, homePhoneCStr, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 5, emergencyContactCStr, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 6, emergencyContactNumberCStr, -1, SQLITE_TRANSIENT);
+
+//    executing statement 1
+    rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE) {
+        LOGE("Execution failed: %s", sqlite3_errmsg(db));
+    } else {
+        LOGI("Record inserted successfully");
+    }
+
+    sqlite3_finalize(stmt);
+
+//    executing statement 2
+
+    rc1 = sqlite3_step(stmt1);
+    if (rc1 != SQLITE_DONE) {
+        LOGE("Execution failed: %s", sqlite3_errmsg(db));
+    } else {
+        LOGI("Record inserted successfully");
+    }
+
+    sqlite3_finalize(stmt1);
+
+//    executing statement 3
+
+    rc2 = sqlite3_step(stmt2);
+    if (rc2 != SQLITE_DONE) {
+        LOGE("Execution failed: %s", sqlite3_errmsg(db));
+    } else {
+        LOGI("Record inserted successfully");
+    }
+
+    sqlite3_finalize(stmt2);
+
+    env->ReleaseStringUTFChars(firstName, firstNameCStr);
+    env->ReleaseStringUTFChars(lastName, lastNameCStr);
+    env->ReleaseStringUTFChars(homeAddress, homeAddressCStr);
+    env->ReleaseStringUTFChars(homePhone, homePhoneCStr);
+    env->ReleaseStringUTFChars(emergencyContact, emergencyContactCStr);
+    env->ReleaseStringUTFChars(emergencyContactNumber, emergencyContactNumberCStr);
+
+    return rc == SQLITE_DONE ? SQLITE_OK : rc;
+}
 
 
 
