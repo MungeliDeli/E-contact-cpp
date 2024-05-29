@@ -11,3 +11,21 @@
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 
+// Database object
+sqlite3 *db;
+
+// create and initializing the database
+extern "C" JNIEXPORT jint JNICALL
+Java_com_example_e_1contact_DbHelper_initDB(JNIEnv *env, jobject /* this */, jstring dbPath) {
+    const char *dbPathCStr = env->GetStringUTFChars(dbPath, nullptr);
+    int rc = sqlite3_open(dbPathCStr, &db);
+    if (rc) {
+        LOGE("Can't open database: %s", sqlite3_errmsg(db));
+        return rc;
+    } else {
+        LOGI("Opened database successfully");
+    }
+
+
+    return SQLITE_OK;
+}
