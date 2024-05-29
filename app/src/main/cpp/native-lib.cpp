@@ -26,6 +26,48 @@ Java_com_example_e_1contact_DbHelper_initDB(JNIEnv *env, jobject /* this */, jst
         LOGI("Opened database successfully");
     }
 
+    // Function to get all contacts from CONTACT table
+extern "C" JNIEXPORT jobject JNICALL
+Java_com_example_e_1contact_DbHelper_getAllContacts(JNIEnv *env, jobject /* this */) {
+    const char *sqlQuery = "SELECT * FROM CONTACT;";
+    sqlite3_stmt *stmt;
+
+    int rc = sqlite3_prepare_v2(db, sqlQuery, -1, &stmt, 0);
+    if (rc != SQLITE_OK) {
+        LOGE("Failed to prepare statement: %s", sqlite3_errmsg(db));
+        return nullptr;
+    }
+
+    jclass arrayListClass = env->FindClass("java/util/ArrayList");
+    jobject arrayList = env->NewObject(arrayListClass, env->GetMethodID(arrayListClass, "<init>", "()V"));
+    jmethodID arrayListAdd = env->GetMethodID(arrayListClass, "add", "(Ljava/lang/Object;)Z");
+
+    jclass contactClass = env->FindClass("com/example/e_contact/Contact");
+    jmethodID contactConstructor = env->GetMethodID(contactClass, "<init>", "(ILjava/lang/String;Ljava/lang/String;)V");
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        int contactID = sqlite3_column_int(stmt, 0);
+        const char *contactName = (const char *) sqlite3_column_text(stmt, 1);
+        const char *contactNumber = (const char *) sqlite3_column_text(stmt, 2);
+
+        jstring contactNameStr = env->NewStringUTF(contactName);
+        jstring contactNumberStr = env->NewStringUTF(contactNumber);
+
+        jobject contactObj = env->NewObject(contactClass, contactConstructor, contactID, contactNameStr, contactNumberStr);
+        env->CallBooleanMethod(arrayList, arrayListAdd, contactObj);
+
+        env->DeleteLocalRef(contactNameStr);
+        env->DeleteLocalRef(contactNumberStr);
+        env->DeleteLocalRef(contactObj);
+    }
+
+    sqlite3_finalize(stmt);
+
+    return arrayList;
+}
+
+
+
 
     return SQLITE_OK;
 }
@@ -136,4 +178,46 @@ Java_com_example_e_1contact_DbHelper_insertContact(JNIEnv *env, jobject, jstring
 
     return rc == SQLITE_DONE ? SQLITE_OK : rc;
 }
+
+// Function to get all contacts from CONTACT table
+extern "C" JNIEXPORT jobject JNICALL
+Java_com_example_e_1contact_DbHelper_getAllContacts(JNIEnv *env, jobject /* this */) {
+    const char *sqlQuery = "SELECT * FROM CONTACT;";
+    sqlite3_stmt *stmt;
+
+    int rc = sqlite3_prepare_v2(db, sqlQuery, -1, &stmt, 0);
+    if (rc != SQLITE_OK) {
+        LOGE("Failed to prepare statement: %s", sqlite3_errmsg(db));
+        return nullptr;
+    }
+
+    jclass arrayListClass = env->FindClass("java/util/ArrayList");
+    jobject arrayList = env->NewObject(arrayListClass, env->GetMethodID(arrayListClass, "<init>", "()V"));
+    jmethodID arrayListAdd = env->GetMethodID(arrayListClass, "add", "(Ljava/lang/Object;)Z");
+
+    jclass contactClass = env->FindClass("com/example/e_contact/Contact");
+    jmethodID contactConstructor = env->GetMethodID(contactClass, "<init>", "(ILjava/lang/String;Ljava/lang/String;)V");
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        int contactID = sqlite3_column_int(stmt, 0);
+        const char *contactName = (const char *) sqlite3_column_text(stmt, 1);
+        const char *contactNumber = (const char *) sqlite3_column_text(stmt, 2);
+
+        jstring contactNameStr = env->NewStringUTF(contactName);
+        jstring contactNumberStr = env->NewStringUTF(contactNumber);
+
+        jobject contactObj = env->NewObject(contactClass, contactConstructor, contactID, contactNameStr, contactNumberStr);
+        env->CallBooleanMethod(arrayList, arrayListAdd, contactObj);
+
+        env->DeleteLocalRef(contactNameStr);
+        env->DeleteLocalRef(contactNumberStr);
+        env->DeleteLocalRef(contactObj);
+    }
+
+    sqlite3_finalize(stmt);
+
+    return arrayList;
+}
+
+
 
