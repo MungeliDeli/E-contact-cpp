@@ -219,5 +219,41 @@ Java_com_example_e_1contact_DbHelper_getAllContacts(JNIEnv *env, jobject /* this
     return arrayList;
 }
 
+// Function to update a contact in the CONTACT table
+extern "C" JNIEXPORT jint JNICALL
+Java_com_example_e_1contact_DbHelper_updateContact(JNIEnv *env, jobject, jint contactId, jstring contactName, jstring contactNumber) {
+    const char *sqlUpdate = "UPDATE CONTACT SET CONTACT_NAME = ?, CONTACT_NUMBER = ? WHERE ID = ?;";
+    sqlite3_stmt *stmt;
+    int rc = sqlite3_prepare_v2(db, sqlUpdate, -1, &stmt, 0);
+    if (rc != SQLITE_OK) {
+        LOGE("Failed to prepare statement: %s", sqlite3_errmsg(db));
+        return rc;
+    }
+
+    const char *contactNameCStr = env->GetStringUTFChars(contactName, nullptr);
+    const char *contactNumberCStr = env->GetStringUTFChars(contactNumber, nullptr);
+
+    sqlite3_bind_text(stmt, 1, contactNameCStr, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, contactNumberCStr, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 3, contactId);
+
+    rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE) {
+        LOGE("Execution failed: %s", sqlite3_errmsg(db));
+    } else {
+        LOGI("Record updated successfully");
+    }
+
+    sqlite3_finalize(stmt);
+
+    env->ReleaseStringUTFChars(contactName, contactNameCStr);
+    env->ReleaseStringUTFChars(contactNumber, contactNumberCStr);
+
+    return rc == SQLITE_DONE ? SQLITE_OK : rc;
+}
+
+
+
+
 
 
